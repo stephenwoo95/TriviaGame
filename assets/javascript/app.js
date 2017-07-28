@@ -7,17 +7,21 @@ var stopwatch = {
 	  reset: function() {
 	    stopwatch.time = 30;
 	  },
-	  start: function() {
-	 	intervalId = setInterval(stopwatch.count, 1000);
-	  },
-	  stop: function() {
-	  	clearInterval(intervalId);
-	  },
 	  count: function() {
+	  	console.log("count accessed");
 	  	if(stopwatch.time > 0){
 	  		stopwatch.time--;
 	  	}
 	    $("#timer").html("Time Remaining: " + stopwatch.time + " seconds");
+	  },
+	  start: function() {
+	  	stopwatch.time = 30;
+	  	console.log("timer var accessed and started");
+	 	intervalId = setInterval(stopwatch.count, 1000);
+	 	console.log(count);
+	  },
+	  stop: function() {
+	  	clearInterval(intervalId);
 	  }
 };
 
@@ -27,38 +31,60 @@ var game = {
 	startGame: function() {
 		$("#timer").html("Pick a difficulty level");
 		var easy = $("<button>");
-		easy.addClass("easy");
+		easy.attr('id',"easy");
+		easy.addClass("diff");
 		easy.html("Easy");
 		var med = $("<button>");
-		med.addClass("medium");
+		med.attr('id',"medium");
+		med.addClass("diff");
 		med.html("Medium");
 		var hard = $("<button>");
-		hard.addClass("hard");
+		hard.attr('id',"hard");
+		hard.addClass("diff");
 		hard.html("Hard");
-		$("#question").append(easy);
+		$("#question").html(easy);
 		$("#question").append(med);
 		$("#question").append(hard);
+		console.log("printed buttons");
+		$("#A").empty();
+		$("#B").empty();
+		$("#C").empty();
+		$("#D").empty();
 	},
 	displayQuestions: function(response) {
+		console.log(game.questionNumber);
 		if(game.questionNumber == response.results.length-1){
 			$("#timer").empty();
 			$("#A").empty();
 			$("#B").empty();
 			$("#C").empty();
 			$("#D").empty();
-			$("#question").html("You scored " + game.correct + " out of 15. <br>");
+			$("#question").html("You scored " + game.correct + " out of 15.");
+			console.log("game ended");
 			return;
 		}
+		console.log("adding question");
+		console.log(response.results[game.questionNumber].question);
 		$("#question").html(response.results[game.questionNumber].question);
 		var options = ['A','B','C','D'];
 		var correctIndex = Math.floor(Math.random()*4);
-		var correctAnswer = response.results[game.questionNumber].correct_answer
-		$("#" + options[correctIndex]).html(correctAnswer);
+		console.log("the correct answer is at: " + options[correctIndex]);
+		var correctAnswer = response.results[game.questionNumber].correct_answer;
+		console.log(correctAnswer);
+		var id = "#" + options[correctIndex];
+		console.log(id);
+		$(id).html(options[correctIndex] + ". " + correctAnswer);
+		options.splice(correctIndex,1);
 		for(var j=0;j<options.length;j++){
-			$("#" + options[j]).html(response.results[game.questionNumber].incorrect_answers[j]);
+			var id = "#" + options[j];
+			console.log(id);
+			console.log(response.results[game.questionNumber].incorrect_answers[j]);
+			$(id).html(options[j] + ". " + response.results[game.questionNumber].incorrect_answers[j]);
 		}
 		stopwatch.start();
-		while(stopwatch.time !== 0){
+		console.log("stopwatch started");
+		while(stopwatch.time >= 0){
+			console.log(stopwatch.time);
 			$(".answer").on("click",function(){
 				stopwatch.stop();
 				$("#A").empty();
@@ -68,6 +94,7 @@ var game = {
 				if(this.textContent === correctAnswer){
 					$("#question").html("Correct!");
 					game.correct++;
+					console.log(game.correct);
 				}else{
 					$("#question").html("Nope!");
 					$("#A").html("The Correct Answer was: " + correctAnswer);
@@ -87,23 +114,35 @@ var game = {
 		setTimeout(game.displayQuestions(response),4000);
 	},
 	reset: function(){
-
+		console.log("trying to reset");
+		game.questionNumber = 0;
+		game.correct = 0;
+		var resetBtn = $("<button>").text("Play Again?").addClass("reset");
+		$("#B").html(resetBtn);
 	}
 };
 
 $(document).ready(function(){
 
 	game.startGame();
-	$("button").on("click",function() {
-		var diff = this.getAttribute("class");
+	$(".diff").on("click",function() {
+		var diff = this.getAttribute("id");
+		console.log(diff);
 
 		$.ajax({
 		url: "https://opentdb.com/api.php?amount=15&category=18&difficulty=" + diff + "&type=multiple",
 		method: "GET"
 		}).done(function(response){
+			console.log("getting questions");
+			console.log(response);
 			game.displayQuestions(response);
+			console.log("game ended in doc");
 			game.reset();
 		});
+	});
+
+	$(".reset").on("click",function() {
+		game.startGame();
 	});
 
 })
