@@ -36,6 +36,7 @@ var stopwatch = {
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 var game = {
+	//game globals
 	questionNumber: 0,
 	correct: 0,
 	correctAnswer: "",
@@ -72,9 +73,10 @@ var game = {
 	//called to grab trivia from API
 	getJSON: function(btn) {
 		var diff = btn.getAttribute("id");
+		var queryURL = "https://opentdb.com/api.php?amount=15&category=18&difficulty=" + diff + "&type=multiple";
 		$.ajax({
-		url: "https://opentdb.com/api.php?amount=15&category=18&difficulty=" + diff + "&type=multiple",
-		method: "GET"
+			url: queryURL,
+			method: "GET"
 		}).done(function(response){
 			//start off displaying first question
 			game.questions=response.results;
@@ -116,7 +118,8 @@ var game = {
 			game.correct++;
 		}else{
 			$("#timer").html("Nope!");
-			$("#question").append("<br><br>The correct answer was: " + game.correctAnswer);
+			var reveal = "<br><br>The correct answer was: " + game.correctAnswer;
+			$("#question").append(reveal);
 		}
 		game.nextQuestion();
 	},
@@ -125,7 +128,8 @@ var game = {
 		stopwatch.stop();
 		game.emptyAnswers();
 		$("#timer").html("Out of Time!");
-		var reveal = $("<p>").html("The Correct Answer was: " + game.correctAnswer);
+		var reveal = $("<p>")
+		reveal.html("The Correct Answer was: " + game.correctAnswer);
 		$("#A").append(reveal);
 		game.nextQuestion();
 	},
@@ -134,15 +138,19 @@ var game = {
 		//increment question number
 		game.questionNumber++;
 		//display next question after 1.5 seconds
-		setTimeout(function(){game.displayQuestion(game.questions[game.questionNumber]);},1500);
+		setTimeout(function(){
+			game.displayQuestion(game.questions[game.questionNumber]);
+		},1500);
 	},
 	//called to end game and ask for replay
 	reset: function(){
 		game.emptyAnswers();
-		$("#timer").html("You correctly answered " + game.correct + " out of " + game.questions.length + " questions.");
+		$("#timer").html("You correctly answered " + game.correct 
+			+ " out of " + game.questions.length + " questions.");
 		game.correct = 0;
 		game.questionNumber = 0;
-		var resetBtn = $("<button>").text("Play Again?").attr('onclick',"game.startGame();");
+		var resetBtn = $("<button>").text("Play Again?")
+		resetBtn.attr('onclick',"game.startGame();");
 		$("#question").html(resetBtn);
 	}
 };
