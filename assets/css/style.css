@@ -59,15 +59,19 @@ h1 {
 	margin-bottom: 20px;
 }
 
-#D {
-	margin-bottom: 20px;s
+.diff {
+	margin-left: 10px;
 }
 
-.answer {
+#D {
+	margin-bottom: 20px;
+}
+
+p {
 	font-size: 25px;
 }
 
-.answer:hover {
-	border: blue solid 2px;
+p:hover {
+	color: blue;
 	background-color: lightgreen;
 }

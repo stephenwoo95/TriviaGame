@@ -12,13 +12,26 @@ var stopwatch = {
 	  	if(stopwatch.time > 0){
 	  		stopwatch.time--;
 	  	}
-	    $("#timer").html("Time Remaining: " + stopwatch.time + " seconds");
+	  	if(stopwatch.time === 0){
+	  		stopwatch.stop();
+			$("#A").empty();
+			$("#B").empty();
+			$("#C").empty();
+			$("#D").empty();
+			$("#timer").html("Out of Time!");
+			$("#A").html("The Correct Answer was: " + game.correctAnswer);
+			game.questionAnswered = true;
+			game.questionNumber++;
+			setTimeout(function(){game.displayQuestion(game.questions[game.questionNumber]);},1500);
+		}else{
+	    	$("#timer").html("Time Remaining: " + stopwatch.time + " seconds");
+	    }
 	  },
 	  start: function() {
-	  	stopwatch.time = 30;
 	  	console.log("timer var accessed and started");
-	 	intervalId = setInterval(stopwatch.count, 1000);
-	 	console.log(count);
+	 	intervalId = setInterval(function(){
+	 		stopwatch.count();}, 1000);
+	 	$("#timer").html("Time Remaining: " + stopwatch.time + " seconds");
 	  },
 	  stop: function() {
 	  	clearInterval(intervalId);
@@ -28,6 +41,9 @@ var stopwatch = {
 var game = {
 	questionNumber: 0,
 	correct: 0,
+	correctAnswer: "",
+	questionAnswered: false,
+	questions: [],
 	startGame: function() {
 		$("#timer").html("Pick a difficulty level");
 		var easy = $("<button>");
@@ -51,99 +67,88 @@ var game = {
 		$("#C").empty();
 		$("#D").empty();
 	},
-	displayQuestions: function(response) {
-		console.log(game.questionNumber);
-		if(game.questionNumber == response.results.length-1){
-			$("#timer").empty();
-			$("#A").empty();
-			$("#B").empty();
-			$("#C").empty();
-			$("#D").empty();
-			$("#question").html("You scored " + game.correct + " out of 15.");
+	displayQuestion: function(data) {
+		if(game.questionNumber === game.questions.length){
 			console.log("game ended");
+			game.reset();
 			return;
 		}
+		stopwatch.reset();
+		game.questionAnswered = false;
 		console.log("adding question");
-		console.log(response.results[game.questionNumber].question);
-		$("#question").html(response.results[game.questionNumber].question);
+		$("#question").html(data.question);
 		var options = ['A','B','C','D'];
 		var correctIndex = Math.floor(Math.random()*4);
 		console.log("the correct answer is at: " + options[correctIndex]);
-		var correctAnswer = response.results[game.questionNumber].correct_answer;
-		console.log(correctAnswer);
+		game.correctAnswer = data.correct_answer;
+		console.log(game.correctAnswer);
+		var slot = $("<p>").html(game.correctAnswer);
 		var id = "#" + options[correctIndex];
-		console.log(id);
-		$(id).html(options[correctIndex] + ". " + correctAnswer);
+		$(id).html(slot);
 		options.splice(correctIndex,1);
 		for(var j=0;j<options.length;j++){
+			var slot = $("<p>").html(data.incorrect_answers[j]);
 			var id = "#" + options[j];
-			console.log(id);
-			console.log(response.results[game.questionNumber].incorrect_answers[j]);
-			$(id).html(options[j] + ". " + response.results[game.questionNumber].incorrect_answers[j]);
+			$(id).html(slot);
 		}
 		stopwatch.start();
 		console.log("stopwatch started");
-		while(stopwatch.time >= 0){
-			console.log(stopwatch.time);
-			$(".answer").on("click",function(){
-				stopwatch.stop();
-				$("#A").empty();
-				$("#B").empty();
-				$("#C").empty();
-				$("#D").empty();
-				if(this.textContent === correctAnswer){
-					$("#question").html("Correct!");
-					game.correct++;
-					console.log(game.correct);
-				}else{
-					$("#question").html("Nope!");
-					$("#A").html("The Correct Answer was: " + correctAnswer);
-				}
-				stopwatch.reset();
-				game.questionNumber++;
-				setTimeout(game.displayQuestions(response),4000);
-			});
-		}
-		stopwatch.stop();
+	},
+	reset: function(){
+		console.log("trying to reset");
 		$("#A").empty();
 		$("#B").empty();
 		$("#C").empty();
 		$("#D").empty();
-		$("#question").html("Out of Time!");
-		$("#A").html("The Correct Answer was: " + correctAnswer);
-		setTimeout(game.displayQuestions(response),4000);
-	},
-	reset: function(){
-		console.log("trying to reset");
-		game.questionNumber = 0;
+		$("#timer").html("You correctly answered " + game.correct + " out of " + game.questions.length + " questions.");
 		game.correct = 0;
+		game.questionNumber = 0;
 		var resetBtn = $("<button>").text("Play Again?").addClass("reset");
-		$("#B").html(resetBtn);
+		$("#question").html(resetBtn);
 	}
 };
 
 $(document).ready(function(){
 
 	game.startGame();
+
 	$(".diff").on("click",function() {
 		var diff = this.getAttribute("id");
 		console.log(diff);
 
 		$.ajax({
-		url: "https://opentdb.com/api.php?amount=15&category=18&difficulty=" + diff + "&type=multiple",
+		url: "https://opentdb.com/api.php?amount=1&category=18&difficulty=" + diff + "&type=multiple",
 		method: "GET"
 		}).done(function(response){
 			console.log("getting questions");
-			console.log(response);
-			game.displayQuestions(response);
-			console.log("game ended in doc");
-			game.reset();
+			game.questions=response.results;
+			game.displayQuestion(game.questions[game.questionNumber]);
 		});
+	});
+
+	$(".answer").on("click",function(){
+		stopwatch.stop();
+		game.questionAnswered = true;
+		var choice = $(this).children().text();
+		$("#A").empty();
+		$("#B").empty();
+		$("#C").empty();
+		$("#D").empty();
+		if(choice === game.correctAnswer){
+			$("#timer").html("Correct!");
+			game.correct++;
+			console.log(game.correct);
+		}else{
+			$("#timer").html("Nope!");
+			$("#question").append("<br><br>The correct answer was: " + game.correctAnswer);
+		}
+		game.questionNumber++;
+		setTimeout(function(){game.displayQuestion(game.questions[game.questionNumber]);},1500);
 	});
 
 	$(".reset").on("click",function() {
 		game.startGame();
 	});
+});
 
-})
 
