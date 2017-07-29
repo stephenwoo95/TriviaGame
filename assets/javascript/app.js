@@ -48,16 +48,20 @@ var game = {
 		$("#timer").html("Pick a difficulty level");
 		var easy = $("<button>");
 		easy.attr('id',"easy");
+		easy.attr('onclick',"game.getJSON(this);");
 		easy.addClass("diff");
 		easy.html("Easy");
 		var med = $("<button>");
 		med.attr('id',"medium");
+		med.attr('onclick',"game.getJSON(this);");
 		med.addClass("diff");
 		med.html("Medium");
 		var hard = $("<button>");
 		hard.attr('id',"hard");
+		hard.attr('onclick',"game.getJSON(this);");
 		hard.addClass("diff");
 		hard.html("Hard");
+		// $(".diff").attr('onclick',"game.getJSON();");
 		$("#question").html(easy);
 		$("#question").append(med);
 		$("#question").append(hard);
@@ -66,6 +70,20 @@ var game = {
 		$("#B").empty();
 		$("#C").empty();
 		$("#D").empty();
+		$(".answer").attr('onclick','game.choooseAnswer(this);');
+	},
+	getJSON: function(btn) {
+		var diff = btn.getAttribute("id");
+		console.log(diff);
+
+		$.ajax({
+		url: "https://opentdb.com/api.php?amount=15&category=18&difficulty=" + diff + "&type=multiple",
+		method: "GET"
+		}).done(function(response){
+			console.log("getting questions");
+			game.questions=response.results;
+			game.displayQuestion(game.questions[game.questionNumber]);
+		});
 	},
 	displayQuestion: function(data) {
 		if(game.questionNumber === game.questions.length){
@@ -94,42 +112,10 @@ var game = {
 		stopwatch.start();
 		console.log("stopwatch started");
 	},
-	reset: function(){
-		console.log("trying to reset");
-		$("#A").empty();
-		$("#B").empty();
-		$("#C").empty();
-		$("#D").empty();
-		$("#timer").html("You correctly answered " + game.correct + " out of " + game.questions.length + " questions.");
-		game.correct = 0;
-		game.questionNumber = 0;
-		var resetBtn = $("<button>").text("Play Again?").attr('onclick',"game.startGame()");
-		$("#question").html(resetBtn);
-	}
-};
-
-$(document).ready(function(){
-
-	game.startGame();
-
-	$(".diff").on("click",function() {
-		var diff = this.getAttribute("id");
-		console.log(diff);
-
-		$.ajax({
-		url: "https://opentdb.com/api.php?amount=1&category=18&difficulty=" + diff + "&type=multiple",
-		method: "GET"
-		}).done(function(response){
-			console.log("getting questions");
-			game.questions=response.results;
-			game.displayQuestion(game.questions[game.questionNumber]);
-		});
-	});
-
-	$(".answer").on("click",function(){
+	choooseAnswer: function(answer){
 		stopwatch.stop();
 		game.questionAnswered = true;
-		var choice = $(this).children().text();
+		var choice = $(answer).children().text();
 		$("#A").empty();
 		$("#B").empty();
 		$("#C").empty();
@@ -144,7 +130,44 @@ $(document).ready(function(){
 		}
 		game.questionNumber++;
 		setTimeout(function(){game.displayQuestion(game.questions[game.questionNumber]);},1500);
-	});
+	},
+	reset: function(){
+		console.log("trying to reset");
+		$("#A").empty();
+		$("#B").empty();
+		$("#C").empty();
+		$("#D").empty();
+		$("#timer").html("You correctly answered " + game.correct + " out of " + game.questions.length + " questions.");
+		game.correct = 0;
+		game.questionNumber = 0;
+		var resetBtn = $("<button>").text("Play Again?").attr('onclick',"game.startGame();");
+		$("#question").html(resetBtn);
+	}
+};
+
+$(document).ready(function(){
+
+	game.startGame();
+
+	// $(".answer").on("click",function(){
+	// 	stopwatch.stop();
+	// 	game.questionAnswered = true;
+	// 	var choice = $(this).children().text();
+	// 	$("#A").empty();
+	// 	$("#B").empty();
+	// 	$("#C").empty();
+	// 	$("#D").empty();
+	// 	if(choice === game.correctAnswer){
+	// 		$("#timer").html("Correct!");
+	// 		game.correct++;
+	// 		console.log(game.correct);
+	// 	}else{
+	// 		$("#timer").html("Nope!");
+	// 		$("#question").append("<br><br>The correct answer was: " + game.correctAnswer);
+	// 	}
+	// 	game.questionNumber++;
+	// 	setTimeout(function(){game.displayQuestion(game.questions[game.questionNumber]);},1500);
+	// });
 });
 
 
