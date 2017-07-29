@@ -1,3 +1,7 @@
+////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////-----TIMER-----///////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
+
 var intervalId;
 
 var stopwatch = {
@@ -8,27 +12,16 @@ var stopwatch = {
 	    stopwatch.time = 30;
 	  },
 	  count: function() {
-	  	console.log("count accessed");
 	  	if(stopwatch.time > 0){
 	  		stopwatch.time--;
 	  	}
 	  	if(stopwatch.time === 0){
-	  		stopwatch.stop();
-			$("#A").empty();
-			$("#B").empty();
-			$("#C").empty();
-			$("#D").empty();
-			$("#timer").html("Out of Time!");
-			$("#A").html("The Correct Answer was: " + game.correctAnswer);
-			game.questionAnswered = true;
-			game.questionNumber++;
-			setTimeout(function(){game.displayQuestion(game.questions[game.questionNumber]);},1500);
+	  		game.timeUp();
 		}else{
 	    	$("#timer").html("Time Remaining: " + stopwatch.time + " seconds");
 	    }
 	  },
 	  start: function() {
-	  	console.log("timer var accessed and started");
 	 	intervalId = setInterval(function(){
 	 		stopwatch.count();}, 1000);
 	 	$("#timer").html("Time Remaining: " + stopwatch.time + " seconds");
@@ -38,70 +31,72 @@ var stopwatch = {
 	  }
 };
 
+////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////------GAME------//////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
+
 var game = {
 	questionNumber: 0,
 	correct: 0,
 	correctAnswer: "",
-	questionAnswered: false,
 	questions: [],
-	startGame: function() {
-		$("#timer").html("Pick a difficulty level");
-		var easy = $("<button>");
-		easy.attr('id',"easy");
-		easy.attr('onclick',"game.getJSON(this);");
-		easy.addClass("diff");
-		easy.html("Easy");
-		var med = $("<button>");
-		med.attr('id',"medium");
-		med.attr('onclick',"game.getJSON(this);");
-		med.addClass("diff");
-		med.html("Medium");
-		var hard = $("<button>");
-		hard.attr('id',"hard");
-		hard.attr('onclick',"game.getJSON(this);");
-		hard.addClass("diff");
-		hard.html("Hard");
-		// $(".diff").attr('onclick',"game.getJSON();");
-		$("#question").html(easy);
-		$("#question").append(med);
-		$("#question").append(hard);
-		console.log("printed buttons");
+	//called to clear the answer choices
+	emptyAnswers: function() {
 		$("#A").empty();
 		$("#B").empty();
 		$("#C").empty();
 		$("#D").empty();
+	},
+	//called to populate difficulty buttons and set button functions
+	startGame: function() {
+		$("#timer").html("Pick a difficulty level");
+		var easy = $("<button>");
+		easy.attr('id',"easy");
+		easy.addClass("diff");
+		easy.html("Easy");
+		var med = $("<button>");
+		med.attr('id',"medium");
+		med.addClass("diff");
+		med.html("Medium");
+		var hard = $("<button>");
+		hard.attr('id',"hard");
+		hard.addClass("diff");
+		hard.html("Hard");
+		$("#question").html(easy);
+		$("#question").append(med);
+		$("#question").append(hard);
+		//set button functionalities
+		$(".diff").attr('onclick',"game.getJSON(this);");
 		$(".answer").attr('onclick','game.choooseAnswer(this);');
 	},
+	//called to grab trivia from API
 	getJSON: function(btn) {
 		var diff = btn.getAttribute("id");
-		console.log(diff);
-
 		$.ajax({
 		url: "https://opentdb.com/api.php?amount=15&category=18&difficulty=" + diff + "&type=multiple",
 		method: "GET"
 		}).done(function(response){
-			console.log("getting questions");
+			//start off displaying first question
 			game.questions=response.results;
 			game.displayQuestion(game.questions[game.questionNumber]);
 		});
 	},
+	//called to display current question and answers
 	displayQuestion: function(data) {
 		if(game.questionNumber === game.questions.length){
-			console.log("game ended");
 			game.reset();
 			return;
 		}
 		stopwatch.reset();
-		game.questionAnswered = false;
-		console.log("adding question");
+		//display question
 		$("#question").html(data.question);
 		var options = ['A','B','C','D'];
+		//set random placement for correct choice
 		var correctIndex = Math.floor(Math.random()*4);
-		console.log("the correct answer is at: " + options[correctIndex]);
 		game.correctAnswer = data.correct_answer;
-		console.log(game.correctAnswer);
 		var slot = $("<p>").html(game.correctAnswer);
 		var id = "#" + options[correctIndex];
+		//add answer choices
 		$(id).html(slot);
 		options.splice(correctIndex,1);
 		for(var j=0;j<options.length;j++){
@@ -110,33 +105,40 @@ var game = {
 			$(id).html(slot);
 		}
 		stopwatch.start();
-		console.log("stopwatch started");
 	},
+	//called when a choice is clicked
 	choooseAnswer: function(answer){
 		stopwatch.stop();
-		game.questionAnswered = true;
 		var choice = $(answer).children().text();
-		$("#A").empty();
-		$("#B").empty();
-		$("#C").empty();
-		$("#D").empty();
+		game.emptyAnswers();
 		if(choice === game.correctAnswer){
 			$("#timer").html("Correct!");
 			game.correct++;
-			console.log(game.correct);
 		}else{
 			$("#timer").html("Nope!");
 			$("#question").append("<br><br>The correct answer was: " + game.correctAnswer);
 		}
+		game.nextQuestion();
+	},
+	//called when no choice clicked in 30 seconds
+	timeUp: function(){
+		stopwatch.stop();
+		game.emptyAnswers();
+		$("#timer").html("Out of Time!");
+		var reveal = $("<p>").html("The Correct Answer was: " + game.correctAnswer);
+		$("#A").append(reveal);
+		game.nextQuestion();
+	},
+	//called to move onto next question
+	nextQuestion: function(){
+		//increment question number
 		game.questionNumber++;
+		//display next question after 1.5 seconds
 		setTimeout(function(){game.displayQuestion(game.questions[game.questionNumber]);},1500);
 	},
+	//called to end game and ask for replay
 	reset: function(){
-		console.log("trying to reset");
-		$("#A").empty();
-		$("#B").empty();
-		$("#C").empty();
-		$("#D").empty();
+		game.emptyAnswers();
 		$("#timer").html("You correctly answered " + game.correct + " out of " + game.questions.length + " questions.");
 		game.correct = 0;
 		game.questionNumber = 0;
@@ -145,29 +147,13 @@ var game = {
 	}
 };
 
+////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////------MAIN------//////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
+
+//start game when document loads
 $(document).ready(function(){
-
 	game.startGame();
-
-	// $(".answer").on("click",function(){
-	// 	stopwatch.stop();
-	// 	game.questionAnswered = true;
-	// 	var choice = $(this).children().text();
-	// 	$("#A").empty();
-	// 	$("#B").empty();
-	// 	$("#C").empty();
-	// 	$("#D").empty();
-	// 	if(choice === game.correctAnswer){
-	// 		$("#timer").html("Correct!");
-	// 		game.correct++;
-	// 		console.log(game.correct);
-	// 	}else{
-	// 		$("#timer").html("Nope!");
-	// 		$("#question").append("<br><br>The correct answer was: " + game.correctAnswer);
-	// 	}
-	// 	game.questionNumber++;
-	// 	setTimeout(function(){game.displayQuestion(game.questions[game.questionNumber]);},1500);
-	// });
 });
 
 
