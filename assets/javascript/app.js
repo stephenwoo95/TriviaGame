@@ -103,7 +103,7 @@ var game = {
 		$("#timer").html("You correctly answered " + game.correct + " out of " + game.questions.length + " questions.");
 		game.correct = 0;
 		game.questionNumber = 0;
-		var resetBtn = $("<button>").text("Play Again?").addClass("reset");
+		var resetBtn = $("<button>").text("Play Again?").attr('onclick',"game.startGame()");
 		$("#question").html(resetBtn);
 	}
 };
@@ -144,10 +144,6 @@ $(document).ready(function(){
 		}
 		game.questionNumber++;
 		setTimeout(function(){game.displayQuestion(game.questions[game.questionNumber]);},1500);
-	});
-
-	$(".reset").on("click",function() {
-		game.startGame();
 	});
 });
 
